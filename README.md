@@ -1,5 +1,7 @@
 # Netflix-Clone-Movielense
 
+This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
+
 ### Enviroment
 * Elasticsearch 5.3.0  
 * spark-2.3.1-bin-hadoop2.7  

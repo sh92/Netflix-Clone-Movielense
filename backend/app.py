@@ -4,9 +4,10 @@ import json
 main = Blueprint('app', __name__)
 
 from flask import Flask, request
+app = Flask(__name__)
 
 @main.route("/", methods=["GET"])
-def show_movie(self):
+def show_movie():
     return "TBD"
 
 @main.route("/create_index", methods=["GET"])
@@ -67,9 +68,8 @@ def get_similar_user(userId, count):
 
 def create_app(sc, dataset_path, tmdb_key):
     global engine 
-    engine = Engine(sc, dataset_pat,tmdb_key)
+    engine = Engine(sc, dataset_path, tmdb_key)
     engine.load_data_from_file()
-
     app = Flask(__name__)
     app.register_blueprint(main)
     return app 

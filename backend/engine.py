@@ -22,7 +22,7 @@ class Engine:
       self.es = ES()
       self.sqlContext = SQLContext(self.sc)
       tmdb.API_KEY = tmdb_key
-      self.tmbd_key = tmbd_key
+      self.tmdb_key = tmdb_key
 
    def load_data_from_file(self):
       ratings_file_path = os.path.join(self.data_path, 'ratings.csv')

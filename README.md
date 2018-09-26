@@ -10,9 +10,10 @@ This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
 ### Execution
 1. Install Spark, ElasticSearch and configure enviroment.
 2. Download the data ml-latest from grouplens site
-3. cd backend
-4. Configure main.py
-5. ./start.sh
+3. pip install -r requirements
+4. cd backend
+5. Configure main.py, start.sh
+6. ./start.sh
 
 ### Execution with ElasticSearch
 1. create index

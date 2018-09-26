@@ -22,18 +22,14 @@ def save_to_es():
 
 @main.route("/search/<movieName>", methods=["GET"])
 def search_movie(movieName):
-    result = engine.search_movie(movieName)
+    result = engine.search_movie_tmdb(movieName)
     return json.dumps(result)
-
-@main.route("/load_from_es", methods=["GET"])
-def load_data_from_es():
-    data = engine.load_data_from_es()
-    return json.dumps(data)
 
 @main.route("/predict/<int:userId>/<int:movieId>", methods=["GET"])
 def get_predict_rating(userId, movieId):
     ratings = engine.get_predicted_rating(userId, movieId)
     print(ratings)
+    return ratings
 
 @main.route("/predict_file/<file_name>", methods=["GET"])
 def get_predict_ratings(file_name):

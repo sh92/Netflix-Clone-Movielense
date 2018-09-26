@@ -18,9 +18,9 @@ class Engine:
 
    def __init__(self, sc, data_path, tmdb_key):
       self.sc =  sc
-      self.data_path = data_path
-      self.es = ES()
       self.sqlContext = SQLContext(self.sc)
+      self.data_path = data_path
+      self.es = ES(self.sc, self.sqlContext)
       tmdb.API_KEY = tmdb_key
       self.tmdb_key = tmdb_key
 
@@ -36,7 +36,7 @@ class Engine:
       )
       ratings_RDD = ratings_raw_RDD.filter(lambda line: line!=ratings_header).map(lambda line: line.split(",")).map(lambda x: (int(x[0]), int(x[1]), float(x[2]) )).cache()
       self.ratings_RDD = ratings_RDD
-      print(ratings_RDD.take(10))
+      logger.info(ratings_RDD.take(10))
       rating_df = self.sqlContext.createDataFrame(ratings_RDD, rating_schema)
       rating_df.show(10)
       self.rating_df = rating_df
@@ -47,7 +47,7 @@ class Engine:
              'movieId': item['movieId'],
              'rating': item['rating']
           }))
-      print(ratings_dict_RDD.take(10))
+      logger.info(ratings_dict_RDD.take(10))
       self.ratings_dict_RDD = ratings_dict_RDD
 
       movie_schema = StructType(\
@@ -82,7 +82,7 @@ class Engine:
 
    def get_predicted_rating(self, userId, movieId):
       predicted_rating_RDD = self.model.predict(userId,movieId)
-      print(predicted_rating_RDD)
+      logger.info(predicted_rating_RDD)
       return redicted_rating_RDD
 
    def get_predicted_rating_from_file(self, file_name):
@@ -93,106 +93,34 @@ class Engine:
       predictions = self.model.predictAll(testdata).map(lambda r: ((r[0], r[1]), r[2]))
       ratesAndPreds = ratings.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
       RMSE = np.sqrt(ratesAndPreds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
-      print("RMSE = " + str(RMSE))
-      print(predictions.collect())
+      logger.info("RMSE = " + str(RMSE))
+      logger.info(predictions.collect())
       return predictions.collect()
 
-   def get_rdd_from_es(self, userId, movieId):
-      q ={
-          "query": {
-                "bool": {
-                   "must" : {
-                       "match_all": {}
-                   },
+   def get_es_ratingRDD(self):
+       ratings = self.es.get_ratingRDD()
+       return ratings
 
-                   "filter": {
-                      "term": {
-                         "userId": userId,
-                         "movieId": movieId
-                      }
-                    }
-                }
-          }
-      }
-      es_read_conf = {
-        "es.nodes" : "localhost",
-        "es.port" : "9200",
-        "es.resource" : "movielens/ratings",
-        "es.query" : q
-      }
-      es_read_rdd = self.sc.newAPIHadoopRDD(
-      inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
-      keyClass="org.apache.hadoop.io.NullWritable", 
-      valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable", 
-      conf=es_read_conf)
-      es_df = self.sqlContext.createDataFrame(es_read_rdd)
-      es_df.show(10)
-      es_ratings_RDD = self.transform(es_read_rdd)
-      return es_ratings_RDD.collect()
+   def get_es_ratingRDD_by_userId(self, userId):
+       ratings = self.es.get_ratingRDD_by_userId(userId)
+       return ratings
 
-   def search_userRatings_from_es(self, userId):
-      q ={
-          "query": {
-                "bool": {
-                   "must" : {
-                       "match_all": {}
-                   },
+   def get_es_ratingRDD_by_movieId(self, userId):
+       ratings = self.es.get_ratingRDD_by_movieId(movieId)
+       return ratings
 
-                   "filter": {
-                      "term": {
-                         "userId": userId
-                      }
-                    }
-                }
-          }
-      }
+   def get_es_ratingRDD_by_user_movie(self, userId, movieId):
+       ratings = self.es.get_ratingRDD_by_user_movie(userId, movieId)
+       return ratings
 
-      es_read_conf = {
-        "es.nodes" : "localhost",
-        "es.port" : "9200",
-        "es.resource" : "movielens/ratings",
-        "es.query" : q
-      }
-      es_read_rdd = self.sc.newAPIHadoopRDD(
-      inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
-      keyClass="org.apache.hadoop.io.NullWritable",
-      valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable",
-      conf=es_read_conf)
-      es_df = self.sqlContext.createDataFrame(es_read_rdd)
-      es_df.show(10)
-      result = self.transform(es_read_rdd)
-      print(result.collect())
-      return result.collect()
-      
-
-   def load_data_from_es(self):
-      es_read_conf = {
-        "es.nodes" : "localhost",
-        "es.port" : "9200",
-        "es.resource" : "movielens/ratings"
-      }
-      es_read_rdd = self.sc.newAPIHadoopRDD(
-      inputFormatClass="org.elasticsearch.hadoop.mr.EsInputFormat",
-      keyClass="org.apache.hadoop.io.NullWritable", 
-      valueClass="org.elasticsearch.hadoop.mr.LinkedMapWritable", 
-      conf=es_read_conf)
-      self.es_df = self.sqlContext.createDataFrame(es_read_rdd)
-      self.es_df.show(10)
-      result = self.transform_from_es(es_read_rdd)
-      self.es_ratings_RDD = result
-      return result.take(10)
-
-   def transform_from_es(self, es_read_rdd):
-      return es_read_rdd.map(lambda x: (x[1]['userId'],x[1]['movieId'],x[1][u'rating']))
-      
-   def search_movie(self, movie_name):
+   def search_movie_tmdb(self, movie_name):
       search = tmdb.Search()
       response = search.movie(query=movie_name)
-      print(response)
+      logger.info(response)
       data_list = []
       for s in search.results:
          data = { 'title': s['title'], 'date':s['date'], 'popularity':s['popularity'], 'id': s['id']}
-         print(data)
+         logger.info(data)
          data_list.append(data)
       result = {'response': response, 'data':data_list}
       return result
@@ -225,7 +153,7 @@ class Engine:
       logger.info("ALS model")
     
    def top_ratings(self, user_id, count):
-      unrated = self.ratings_RDD.filter(lambda rating: not rating[0] == user_id).map(lambda x: (user_id, x[1])).distinct()
+      unrated = self.ratings_RDD.filter(lambda x: not x[0] == user_id).map(lambda x: (user_id, x[1])).distinct()
       predicted_RDD = self.model.predictAll(unrated)
       predicted_RDD = predicted_RDD.map(lambda x: (x.product, x.rating))
       ratings = predicted_RDD.takeOrdered(count, key=lambda x: -x[1])

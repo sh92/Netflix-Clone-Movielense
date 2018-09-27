@@ -1,22 +1,21 @@
 {
-  "name": "netflix-clone-movielense",
-  "version": "1.0.0",
-  "description": "This project is a sideProject to clone Netflix with MovieLense Data and TMDB API",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "./node_modules/.bin/webpack --mode development"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sh92/Netflix-Clone-Movielense.git"
-  },
+  "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sh92/Netflix-Clone-Movielense/issues"
-  },
-  "homepage": "https://github.com/sh92/Netflix-Clone-Movielense#readme",
   "devDependencies": {
-    "bower": "^1.8.4"
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "webpack": "^4.1.0",
+    "webpack-cli": "^2.0.14"
+  },
+  "dependencies": {
+    "babel-preset-env": "^1.6.1",
+    "react": "^16.3.1",
+    "react-dom": "^16.3.1"
   }
 }

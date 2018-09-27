@@ -1,14 +1,19 @@
-from flask import Blueprint
-from engine import Engine
+from flask import Blueprint, render_template
+from backend.engine import Engine
+
 import json
-main = Blueprint('app', __name__)
 
 from flask import Flask, request
-app = Flask(__name__)
+#app = Flask(__name__, template_folder="frontend/templates")
+main = Blueprint('app', __name__, template_folder="frontend/templates")
 
 @main.route("/", methods=["GET"])
-def show_movie():
-    return "TBD"
+def index():
+    return render_template("index.html")
+
+@main.route("/hello", methods=["GET"])
+def hello():
+    return render_template("hello.html")
 
 @main.route("/create_index", methods=["GET"])
 def create_index():
@@ -46,7 +51,9 @@ def get_predict_ratings(file_name):
 def get_topN(userId,count):
     topN_movies_ratings = engine.top_ratings(userId, count)
     print(topN_movies_ratings)
-    return json.dumps(topN_movies_ratings)
+    movie_list = json.dumps(topN_movies_ratings)
+    return render_template('movies.html', movies=movie_list)
+    #return json.dumps(topN_movies_ratings)
 
 #TODO start
 

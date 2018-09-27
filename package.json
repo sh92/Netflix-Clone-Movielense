@@ -1,0 +1,22 @@
+{
+  "name": "netflix-clone-movielense",
+  "version": "1.0.0",
+  "description": "This project is a sideProject to clone Netflix with MovieLense Data and TMDB API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sh92/Netflix-Clone-Movielense.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sh92/Netflix-Clone-Movielense/issues"
+  },
+  "homepage": "https://github.com/sh92/Netflix-Clone-Movielense#readme",
+  "devDependencies": {
+    "bower": "^1.8.4"
+  }
+}

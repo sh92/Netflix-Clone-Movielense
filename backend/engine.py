@@ -176,4 +176,12 @@ class Engine:
       ratings_movie_id = [x[0] for x in ratings_list]
       movie_title_dict = self.es.get_movieTitleByMovieId(ratings_movie_id)
       result_list = [ (x[0], movie_title_dict[x[0]], x[1][0], x[1][1]) for x in ratings_list]
-      return result_list
+      result_json = {}
+      for x in result_list:
+         result_json[x[0]] = {
+               "movieId": x[0],
+               "title": x[1],
+               "rating": x[2],
+               "count": x[3]
+            }
+      return result_json

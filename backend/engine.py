@@ -14,6 +14,15 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def get_product_avgRating_count(groupBy_product_rating_RDD):
+   product_id = groupBy_product_rating_RDD[0]
+   count = len(groupBy_product_rating_RDD[1])
+   rating_sum = 0.000
+   for x in groupBy_product_rating_RDD[1]:
+      rating_sum += x
+   return product_id, (float(rating_sum/count), count)
+
 class Engine:
 
    def __init__(self, sc, data_path, tmdb_key):
@@ -36,7 +45,7 @@ class Engine:
       )
       ratings_RDD = ratings_raw_RDD.filter(lambda line: line!=ratings_header).map(lambda line: line.split(",")).map(lambda x: (int(x[0]), int(x[1]), float(x[2]) )).cache()
       self.ratings_RDD = ratings_RDD
-      logger.info(ratings_RDD.take(10))
+      #logger.info(ratings_RDD.take(10))
       rating_df = self.sqlContext.createDataFrame(ratings_RDD, rating_schema)
       rating_df.show(10)
       self.rating_df = rating_df
@@ -47,7 +56,7 @@ class Engine:
              'movieId': item['movieId'],
              'rating': item['rating']
           }))
-      logger.info(ratings_dict_RDD.take(10))
+      #logger.info(ratings_dict_RDD.take(10))
       self.ratings_dict_RDD = ratings_dict_RDD
 
       movie_schema = StructType(\
@@ -66,7 +75,7 @@ class Engine:
 
       movies_df = self.sqlContext.createDataFrame(self.movies_RDD, movie_schema)
       movies_df.show(10)
-      self.movies = movies_df
+      self.movies_df = movies_df
 
       movies_dict_RDD = rating_df.rdd.map(lambda item : (
           item['movieId'], {
@@ -76,7 +85,7 @@ class Engine:
           }))
       self.movies_dict_RDD = movies_dict_RDD
             
-      self.rank = 3
+      self.rank = 10
       self.iterations = 10
       self.train()
 
@@ -92,9 +101,9 @@ class Engine:
       testdata = ratings.map(lambda p: (p[0], p[1]))
       predictions = self.model.predictAll(testdata).map(lambda r: ((r[0], r[1]), r[2]))
       ratesAndPreds = ratings.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
-      RMSE = np.sqrt(ratesAndPreds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
+      RMSE = math.sqrt(ratesAndPreds.map(lambda r: (r[1][0] - r[1][1])**2).mean())
       logger.info("RMSE = " + str(RMSE))
-      logger.info(predictions.collect())
+      #logger.info(predictions.collect())
       return predictions.collect()
 
    def get_es_ratingRDD(self):
@@ -116,11 +125,11 @@ class Engine:
    def search_movie_tmdb(self, movie_name):
       search = tmdb.Search()
       response = search.movie(query=movie_name)
-      logger.info(response)
+      #logger.info(response)
       data_list = []
       for s in search.results:
          data = { 'title': s['title'], 'date':s['date'], 'popularity':s['popularity'], 'id': s['id']}
-         logger.info(data)
+         #logger.info(data)
          data_list.append(data)
       result = {'response': response, 'data':data_list}
       return result
@@ -151,10 +160,20 @@ class Engine:
    def train(self):
       self.model = ALS.train(self.ratings_RDD, self.rank, self.iterations, 0.01)
       logger.info("ALS model")
-    
+
    def top_ratings(self, user_id, count):
       unrated = self.ratings_RDD.filter(lambda x: not x[0] == user_id).map(lambda x: (user_id, x[1])).distinct()
-      predicted_RDD = self.model.predictAll(unrated)
-      predicted_RDD = predicted_RDD.map(lambda x: (x.product, x.rating))
-      ratings = predicted_RDD.takeOrdered(count, key=lambda x: -x[1])
-      return ratings
+      predicted_RDD =  self.model.predictAll(unrated)
+      total_RDD = self.ratings_RDD.union(predicted_RDD)
+      list_predict_movie = predicted_RDD.map(lambda x : x.product).distinct().collect()
+      predicted_movie_RDD = total_RDD.filter(lambda x: x[1] in list_predict_movie)
+
+      predicted_groupby_product_rating_RDD = predicted_movie_RDD.map(lambda x: (x[1], x[2])).groupByKey()
+      product_avgRating_count_RDD = predicted_groupby_product_rating_RDD.map(get_product_avgRating_count)
+
+      filtered_RDD = product_avgRating_count_RDD.filter(lambda x: x[1][0] > 3 and x[1][1] > 30)
+      ratings_list = filtered_RDD.takeOrdered(count, key=lambda x: -x[1][0])
+      ratings_movie_id = [x[0] for x in ratings_list]
+      movie_title_dict = self.es.get_movieTitleByMovieId(ratings_movie_id)
+      result_list = [ (x[0], movie_title_dict[x[0]], x[1][0], x[1][1]) for x in ratings_list]
+      return result_list

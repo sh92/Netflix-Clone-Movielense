@@ -20,6 +20,11 @@ def save_to_es():
     engine.save_to_es()
     return "Save"
 
+@main.route("/save_to_es_movies", methods=["GET"])
+def save_to_es_movies():
+    engine.save_to_es_movies()
+    return "Save Movie"
+
 @main.route("/search/<movieName>", methods=["GET"])
 def search_movie(movieName):
     result = engine.search_movie_tmdb(movieName)

@@ -1,0 +1,15 @@
+<html>
+    <head>
+        <title>MovieLens TopN Recommender</title>
+    </head>
+    <body>
+		<h1> Recommend unrated movie recommended for user </h1>
+		<h3>  movie title, movie rating, movie count  </h3>
+		{% for movie in movies %}
+	    <ul>
+		     <li> {{ movie.title }}, {{ movie.rating}}, {{ movie.count}} </li>
+			 <br/>
+		</ul>
+		{% endfor %}
+    </body>
+</html>

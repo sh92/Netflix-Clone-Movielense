@@ -37,7 +37,6 @@ class Engine:
       ratings_file_path = os.path.join(self.data_path, 'ratings.csv')
       ratings_raw_RDD = self.sc.textFile(ratings_file_path)
       ratings_header = ratings_raw_RDD.take(1)[0]
-      #ratings_header_list = ratings_header.split(",")
       rating_schema = StructType(\
       [StructField('userId', IntegerType(), True),\
       StructField('movieId', IntegerType(), True),\
@@ -45,9 +44,7 @@ class Engine:
       )
       ratings_RDD = ratings_raw_RDD.filter(lambda line: line!=ratings_header).map(lambda line: line.split(",")).map(lambda x: (int(x[0]), int(x[1]), float(x[2]) )).cache()
       self.ratings_RDD = ratings_RDD
-      #logger.info(ratings_RDD.take(10))
       rating_df = self.sqlContext.createDataFrame(ratings_RDD, rating_schema)
-      rating_df.show(10)
       self.rating_df = rating_df
 
       ratings_dict_RDD = rating_df.rdd.map(lambda item : (
@@ -65,6 +62,7 @@ class Engine:
       StructField('genres', StringType(), True)]\
       )
 
+
       movies_file_path = os.path.join(self.data_path, 'movies.csv')
       movies_raw_RDD = self.sc.textFile(movies_file_path)
       movies_header = movies_raw_RDD.take(1)[0]
@@ -74,7 +72,6 @@ class Engine:
 
 
       movies_df = self.sqlContext.createDataFrame(self.movies_RDD, movie_schema)
-      movies_df.show(10)
       self.movies_df = movies_df
 
       movies_dict_RDD = rating_df.rdd.map(lambda item : (
@@ -88,6 +85,30 @@ class Engine:
       self.rank = 10
       self.iterations = 10
       self.train()
+
+      #TODO Get the image by using tmdb API and links.csv
+      links_schema = StructType(\
+      [StructField('movieId', IntegerType(), True),\
+      StructField('imdbId', IntegerType(), True),\
+      StructField('tmdbId', IntegerType(), True)]\
+      )
+
+      links_file_path = os.path.join(self.data_path, 'links.csv')
+      links_raw_RDD = self.sc.textFile(links_file_path)
+      links_header = links_raw_RDD.take(1)[0]
+      links_header_list = links_header.split(",")
+
+      self.links_RDD = links_raw_RDD.filter(lambda line: line!=links_header).map(lambda line: line.split(",")).map(lambda x: (int(x[0]),x[1],x[2])).cache()
+
+      links_df = self.sqlContext.createDataFrame(self.links_RDD, links_schema)
+      self.links_df = links_df
+
+      links_dict_RDD = links_df.rdd.map(lambda item : (
+          item['movieId'], {
+             'movieId': item['movieId'],
+             'imdbId': item['imdbId'],
+             'tmdbId': item['tmdbId']
+          }))
 
    def get_predicted_rating(self, userId, movieId):
       predicted_rating_RDD = self.model.predict(userId,movieId)
@@ -140,6 +161,7 @@ class Engine:
    def save_to_es(self):
       self.rating_df.write.format("es").save("movielens/ratings")
       self.movies_df.write.format("es").save("movielens/movies")
+      self.links_df.write.format("es").save("movielens/links")
 
    def save_to_es_hadoop(self):
       es_write_conf = {
@@ -161,7 +183,7 @@ class Engine:
       self.model = ALS.train(self.ratings_RDD, self.rank, self.iterations, 0.01)
       logger.info("ALS model")
 
-   def top_ratings(self, user_id, count):
+   def topN_ratings_unrated_movies(self, user_id, count):
       unrated = self.ratings_RDD.filter(lambda x: not x[0] == user_id).map(lambda x: (user_id, x[1])).distinct()
       predicted_RDD =  self.model.predictAll(unrated)
       total_RDD = self.ratings_RDD.union(predicted_RDD)
@@ -176,23 +198,13 @@ class Engine:
       ratings_movie_id = [x[0] for x in ratings_list]
       movie_title_dict = self.es.get_movieTitleByMovieId(ratings_movie_id)
       result_list = [ (x[0], movie_title_dict[x[0]], x[1][0], x[1][1]) for x in ratings_list]
-      '''
-      result_json = {}
+      result = []
       for x in result_list:
-         result_json[x[0]] = {
+         y = {
                "movieId": x[0],
                "title": x[1],
                "rating": x[2],
                "count": x[3]
             }
-      '''
-      reslut = []
-      for x in result_list:
-         x = {
-               "movieId": x[0],
-               "title": x[1],
-               "rating": x[2],
-               "count": x[3]
-            }
-         result.append(x)
+         result.append(y)
       return result

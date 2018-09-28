@@ -1,6 +1,7 @@
 # Netflix-Clone-Movielense
 
 This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
+* Top N unrated movie recommender for user
 
 ### Enviroment
 * Elasticsearch 5.3.0  
@@ -12,7 +13,7 @@ This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
 2. Download the data ml-latest from grouplens site
 3. pip install -r requirements
 4. cd backend
-5. Configure main.py, start.sh
+5. Configure server.py, start.sh
 6. ./start.sh
 
 ### Execution with ElasticSearch

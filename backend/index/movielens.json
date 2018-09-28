@@ -67,6 +67,31 @@
                     }
                 }
             }
+        }, 
+		"links": {
+            "properties": {
+                "movieId": {
+                    "type": "integer"
+                },
+                "imdbId": {
+                    "type" :  "insteger"
+                },
+                "tmdbId": {
+                    "type": "integer"
+                },
+                "@model": {
+                    "properties": {
+                        "factor": {
+                            "type": "text",
+                            "term_vector": "with_positions_offsets_payloads",
+                            "analyzer" : "payload_analyzer"
+                        },
+                        "version": {
+                            "type": "keyword"
+                        }
+                    }
+                }
+            }
         }
     }
 }

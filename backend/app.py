@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template
-from backend.engine import Engine
+from engine import Engine
 
 import json
 
 from flask import Flask, request
-#app = Flask(__name__, template_folder="frontend/templates")
-main = Blueprint('app', __name__, template_folder="frontend/templates")
+main = Blueprint('app', __name__)
 
 @main.route("/", methods=["GET"])
 def index():
@@ -46,22 +45,14 @@ def get_predict_ratings(file_name):
     ratings = engine.get_predicted_rating_from_file(file_name)
     return json.dumps(ratings)
 
-#TODO Improve topN
-@main.route("/topN/<int:userId>/<int:count>", methods=["GET"])
-def get_topN(userId,count):
-    topN_movies_ratings = engine.top_ratings(userId, count)
-    print(topN_movies_ratings)
-    movie_list = json.dumps(topN_movies_ratings)
-    return render_template('movies.html', movies=movie_list)
-    #return json.dumps(topN_movies_ratings)
+@main.route("/topN_movies/", methods=["POST"])
+def get_topN():
+    userId = int(request.form['userId'])
+    count = int(request.form['count'])
+    topN_movies_ratings = engine.topN_ratings_unrated_movies(userId, count)
+    return render_template('topN.html', movies = topN_movies_ratings)
 
 #TODO start
-
-@main.route("/avg/<int:movieId>", methods=["GET"])
-def get_average_rating(movieId):
-    rating = engine.get_average_rating(movieId)
-    return json.dumps(rating)
-
 @main.route("/similar/<int:movieId>/<int:count>", methods=["GET"])
 def get_similar_movie(movieId, count):
     similar_movies = engine.similar_movie(movieId, coount)
@@ -71,7 +62,6 @@ def get_similar_movie(movieId, count):
 def get_similar_user(userId, count):
     similar_user = engine.similar_user(userId, coount)
     return json.dumps(similar_user)
-
 #TODO end
 
 def create_app(sc, dataset_path, tmdb_key):

@@ -10,6 +10,6 @@ if __name__ == "__main__":
     sc = SparkContext(conf=conf)
     tmdb_key = "YOUR_KEY"
 
-    dataset_path = os.path.join('../../data', 'ml-latest-small')
+    dataset_path = os.path.join('../../../data', 'ml-latest-small')
     app = create_app(sc, dataset_path, tmdb_key)
     run_server(app)

@@ -21,11 +21,11 @@ spark\_session : spark session
 6. ./start.sh
 
 ### Execution with ElasticSearch
-1. create index 
-IP:PORT/index/movielens 
-2. save data to ElasticSearch
-IP:PORT/save_to_es  
-3. search data from ElasticSearch
+1. create index  
+IP:PORT/index/movielens  
+2. save data to ElasticSearch  
+IP:PORT/save_to_es   
+3. search data from ElasticSearch 
 
 ### Acknowledgement
 * [GroupLens, MovieLense](https://grouplens.org/datasets/movielens/)  

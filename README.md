@@ -8,6 +8,10 @@ This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
 * Spark-2.3.1-bin-hadoop2.7  
 * ElasticSearch-hadoop-5.3.0  
 
+### Directory
+sc\_with\_elastic : spark context with elasticsearch
+spark\_session : spark session
+
 ### Execution
 1. Install Spark, ElasticSearch and configure enviroment.
 2. Download the data ml-latest from grouplens site

@@ -1,4 +1,4 @@
-# Netflix-Clone-Movielense
+# Recommendersystem with Spark, Elastic Search and Flask for MovieLens
 
 This project is a sideProject to clone Netflix with MovieLense Data and TMDB API
 * Top N unrated movie recommender for user
